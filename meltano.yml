@@ -4,19 +4,22 @@ project_id: target-montapackingv2
 plugins:
   extractors: []
   loaders:
-  - name: target-montapackingv2
-    namespace: target_montapackingv2
-    pip_url: -e .
-    capabilities:
-    - state
-    - catalog
-    - discover
-    config:
-      start_date: '2010-01-01T00:00:00Z'
-    settings:
-    # TODO: To configure using Meltano, declare settings and their types here:
-    - name: username
-    - name: password
-      kind: password
-    - name: start_date
-      value: '2010-01-01T00:00:00Z'
+    - name: target-montapackingv2
+      namespace: target_montapackingv2
+      pip_url: -e .
+      capabilities:
+        - state
+        - catalog
+        - discover
+      config:
+        start_date: "2010-01-01T00:00:00Z"
+      settings:
+        # TODO: To configure using Meltano, declare settings and their types here:
+        - name: export_remove_line_and_resend
+          kind: boolean
+          value: false
+        - name: username
+        - name: password
+          kind: password
+        - name: start_date
+          value: "2010-01-01T00:00:00Z"
