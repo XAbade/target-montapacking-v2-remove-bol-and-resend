@@ -1,5 +1,8 @@
 """Montapackingv2 target sink class, which handles writing streams."""
 
+import re
+
+from hotglue_etl_exceptions import InvalidPayloadError
 from target_montapackingv2.client import MontapackingSink
 
 class InboundForecastSink(MontapackingSink):
@@ -33,9 +36,28 @@ class InboundForecastSink(MontapackingSink):
         return mapping
     
     def upsert_record(self, record: dict, context: dict):
-        buy_order_response = self.request_api(
-            "POST", endpoint=self.endpoint, request_data=record
-        )
+        while True:
+            try:
+                buy_order_response = self.request_api(
+                    "POST", endpoint=self.endpoint, request_data=record
+                )
+                break
+            except InvalidPayloadError as error:
+                if self.config.get("export_remove_line_and_resend") is not True:
+                    raise
+
+                invalid_skus = re.findall(
+                    r"SKU:\s*(\S+)\s+\[2;\s*No products found", str(error)
+                )
+                remaining_lines = [
+                    line
+                    for line in record["InboundForecasts"]
+                    if str(line["Sku"]) not in invalid_skus
+                ]
+                if not remaining_lines or remaining_lines == record["InboundForecasts"]:
+                    raise
+
+                record["InboundForecasts"] = remaining_lines
         buy_order_remoteId = buy_order_response.json()["UniqueId"]
         # input_id = record.get("id")
         self.logger.info(f"BuyOrder created succesfully with UniqueId {buy_order_remoteId}")
